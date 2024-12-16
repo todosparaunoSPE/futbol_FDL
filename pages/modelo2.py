@@ -11,6 +11,26 @@ import tensorflow_hub as hub
 import numpy as np
 import streamlit as st
 
+# Mostrar la sección de ayuda en el sidebar
+st.sidebar.write("### Ayuda")
+st.sidebar.write("""
+Este código utiliza un modelo de detección de objetos basado en **EfficientDet** de TensorFlow Hub, 
+el cual permite identificar y localizar objetos en imágenes o videos en tiempo real.
+
+**¿Qué hace este código?**
+- El código carga un modelo preentrenado para detección de objetos desde TensorFlow Hub.
+- Se procesan los fotogramas de un video y se detectan los objetos en cada uno de ellos.
+- El modelo realiza la predicción sobre los objetos presentes en los fotogramas.
+- Los resultados se muestran en un contenedor de imágenes interactivo utilizando Streamlit.
+
+**Modelo Utilizado:**
+- El modelo usado es el **EfficientDet D0** de TensorFlow Hub, que es eficiente en términos de precisión y velocidad.
+- El modelo está optimizado para realizar tareas de detección de objetos en imágenes de tamaño reducido (320x320 px).
+
+**Autor:**
+- **Javier Horacio Pérez Ricárdez**
+""")
+
 # Cargar el modelo desde TensorFlow Hub
 model_url = "https://tfhub.dev/tensorflow/efficientdet/d0/1"  # Ejemplo de modelo de detección de objetos
 model = hub.load(model_url)
