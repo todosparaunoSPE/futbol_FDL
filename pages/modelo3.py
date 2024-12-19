@@ -59,7 +59,13 @@ def process_video(video_path):
         blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
         net.setInput(blob)
         layer_names = net.getLayerNames()
-        output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+        
+        # Ajuste para obtener las capas correctas
+        try:
+            output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers().flatten()]
+        except AttributeError:
+            # Manejo para versiones más antiguas de OpenCV
+            output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
         # Ejecutar la detección
         detections = net.forward(output_layers)
