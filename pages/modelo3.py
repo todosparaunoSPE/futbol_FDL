@@ -5,36 +5,27 @@ Created on Thu Dec 19 13:22:49 2024
 @author: jperezr
 """
 
+import os
+import urllib.request
 import cv2
 import numpy as np
 import streamlit as st
 import time
-import os
-import urllib.request
 
-# Función para descargar yolov3.weights
-def download_weights():
-    url = "https://pjreddie.com/media/files/yolov3.weights"  # Enlace oficial de YOLO
-    output_path = "yolov3.weights"
-    
-    if not os.path.exists(output_path):
-        st.write("Descargando yolov3.weights, esto puede tomar algunos minutos...")
-        urllib.request.urlretrieve(url, output_path)
-        st.write("Descarga completada.")
-    else:
-        st.write("El archivo yolov3.weights ya está disponible.")
-
-# Llama a la función antes de cargar el modelo
-download_weights()
-
-# Rutas a los archivos descargados
-cfg_path = "yolov3.cfg"
+# URL para descargar yolov3.weights si no está disponible
+weights_url = "https://example.com/yolov3.weights"  # Reemplaza con tu enlace
 weights_path = "yolov3.weights"
-names_path = "coco.names"
 
-# Verificar que los archivos necesarios estén presentes
-if not os.path.exists(cfg_path) or not os.path.exists(names_path):
-    st.error("Faltan archivos. Asegúrate de tener 'yolov3.cfg' y 'coco.names' en el directorio.")
+# Descargar el archivo yolov3.weights si no existe
+if not os.path.exists(weights_path):
+    st.write("Descargando yolov3.weights...")
+    urllib.request.urlretrieve(weights_url, weights_path)
+    st.write("\u2714\ufe0f Descarga completa!")
+
+# Rutas a los archivos necesarios
+cfg_path = "yolov3.cfg"
+names_path = "coco.names"
+video_path = "america_monterrey.mp4"  # Ruta del video cargado automáticamente
 
 # Cargar el modelo YOLO
 net = cv2.dnn.readNet(weights_path, cfg_path)
@@ -54,18 +45,12 @@ def process_video(video_path):
             break
 
         frame_number += 1
-        
+
         # Preparar la imagen para YOLO
         blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
         net.setInput(blob)
         layer_names = net.getLayerNames()
-        
-        # Ajuste para obtener las capas correctas
-        try:
-            output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers().flatten()]
-        except AttributeError:
-            # Manejo para versiones más antiguas de OpenCV
-            output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+        output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
         # Ejecutar la detección
         detections = net.forward(output_layers)
@@ -76,7 +61,7 @@ def process_video(video_path):
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0.5:  # Umbral de confianza (puedes ajustarlo)
+                if confidence > 0.5:  # Umbral de confianza
                     # Coordenadas del cuadro delimitador
                     center_x = int(detection[0] * frame.shape[1])
                     center_y = int(detection[1] * frame.shape[0])
@@ -88,7 +73,7 @@ def process_video(video_path):
                     y = int(center_y - h / 2)
 
                     # Solo dibujar cuadros alrededor de las personas (jugadores)
-                    if classes[class_id] == "person":  # Asegúrate de que sea una persona
+                    if classes[class_id] == "person":
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         # Convertir la imagen de BGR a RGB
@@ -99,22 +84,13 @@ def process_video(video_path):
 
 # Configurar la interfaz de Streamlit
 st.title('Detección de Jugadores en Video')
-st.write("Sube un video de fútbol para detectar jugadores en él.")
+st.write("Mostrando detección automática del video cargado.")
 
-# Subir un archivo de video
-uploaded_video = st.file_uploader("Cargar video", type=["mp4", "mov", "avi"])
+# Mostrar el video con detecciones de jugadores automáticamente
+stframe = st.empty()
 
-if uploaded_video is not None:
-    # Guardar el video temporalmente
-    video_path = "temp_video.mp4"
-    with open(video_path, "wb") as f:
-        f.write(uploaded_video.getbuffer())
+for frame in process_video(video_path):
+    stframe.image(frame, channels="RGB", use_container_width=True)
+    time.sleep(0.05)  # Controla la velocidad del video
 
-    # Mostrar el video con detecciones de jugadores
-    stframe = st.empty()
-
-    for frame in process_video(video_path):
-        stframe.image(frame, channels="RGB", use_container_width=True)
-        time.sleep(0.05)  # Controla la velocidad del video
-
-    st.write("¡Detección completa!")
+st.write("\u2714\ufe0f \u00a1Detección completa!")
