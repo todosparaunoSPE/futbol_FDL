@@ -13,7 +13,7 @@ import streamlit as st
 import time
 
 # URL para descargar yolov3.weights si no está disponible
-weights_url = "https://example.com/yolov3.weights"  # Reemplaza con tu enlace
+weights_url = "https://sourceforge.net/projects/yolov3.mirror/yolov3.weights"  # Reemplaza con tu enlace
 weights_path = "yolov3.weights"
 
 # Descargar el archivo yolov3.weights si no existe
