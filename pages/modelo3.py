@@ -6,38 +6,52 @@ Created on Thu Dec 19 13:22:49 2024
 """
 
 import os
-import urllib.request
 import cv2
 import numpy as np
 import streamlit as st
 import time
 
-# URL para descargar yolov3.weights si no está disponible
-weights_url = "https://sourceforge.net/projects/yolov3.mirror/files/v8/yolov3.weights"  # Reemplaza con tu enlace
+# Ruta local del archivo yolov3.weights
 weights_path = "yolov3.weights"
 
-# Descargar el archivo yolov3.weights si no existe
+# Verificar si el archivo yolov3.weights existe
 if not os.path.exists(weights_path):
-    st.write("Descargando yolov3.weights...")
-    urllib.request.urlretrieve(weights_url, weights_path)
-    st.write("\u2714\ufe0f Descarga completa!")
+    st.error(f"El archivo {weights_path} no se encuentra en el directorio.")
+    st.stop()
 
 # Rutas a los archivos necesarios
 cfg_path = "yolov3.cfg"
 names_path = "coco.names"
 video_path = "america_monterrey.mp4"  # Ruta del video cargado automáticamente
 
+# Comprobar si los archivos necesarios existen
+if not os.path.exists(cfg_path) or not os.path.exists(names_path):
+    st.error("Faltan los archivos .cfg o .names. Asegúrate de que estén en el directorio correcto.")
+    st.stop()
+
 # Cargar el modelo YOLO
-net = cv2.dnn.readNet(weights_path, cfg_path)
+try:
+    net = cv2.dnn.readNet(weights_path, cfg_path)
+except cv2.error as e:
+    st.error(f"Error al cargar el modelo YOLO: {e}")
+    st.stop()
 
 # Cargar las clases
-with open(names_path, "r") as f:
-    classes = [line.strip() for line in f.readlines()]
+try:
+    with open(names_path, "r") as f:
+        classes = [line.strip() for line in f.readlines()]
+except FileNotFoundError:
+    st.error("No se encontró el archivo coco.names.")
+    st.stop()
 
 # Función para procesar el video con detección
 def process_video(video_path):
     # Usar OpenCV para capturar el video
     cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        st.error("No se pudo abrir el video.")
+        st.stop()
+
     frame_number = 0
     while cap.isOpened():
         ret, frame = cap.read()
