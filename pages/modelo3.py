@@ -9,11 +9,32 @@ import cv2
 import numpy as np
 import streamlit as st
 import time
+import os
+import urllib.request
+
+# Función para descargar yolov3.weights
+def download_weights():
+    url = "https://pjreddie.com/media/files/yolov3.weights"  # Enlace oficial de YOLO
+    output_path = "yolov3.weights"
+    
+    if not os.path.exists(output_path):
+        st.write("Descargando yolov3.weights, esto puede tomar algunos minutos...")
+        urllib.request.urlretrieve(url, output_path)
+        st.write("Descarga completada.")
+    else:
+        st.write("El archivo yolov3.weights ya está disponible.")
+
+# Llama a la función antes de cargar el modelo
+download_weights()
 
 # Rutas a los archivos descargados
 cfg_path = "yolov3.cfg"
 weights_path = "yolov3.weights"
 names_path = "coco.names"
+
+# Verificar que los archivos necesarios estén presentes
+if not os.path.exists(cfg_path) or not os.path.exists(names_path):
+    st.error("Faltan archivos. Asegúrate de tener 'yolov3.cfg' y 'coco.names' en el directorio.")
 
 # Cargar el modelo YOLO
 net = cv2.dnn.readNet(weights_path, cfg_path)
@@ -71,36 +92,23 @@ def process_video(video_path):
     cap.release()
 
 # Configurar la interfaz de Streamlit
-st.set_page_config(page_title="Detección de Jugadores en Video", page_icon="⚽")
-
-# Sidebar con información
-st.sidebar.title("Ayuda")
-st.sidebar.write("""
-    **Este proyecto utiliza el modelo YOLOv3** para la detección de jugadores en un video de fútbol. 
-    El modelo YOLOv3 es una red neuronal convolucional entrenada para detectar objetos en imágenes y videos en tiempo real. 
-    Este código carga un video específico llamado `america_monterrey.mp4` y muestra los jugadores detectados (personas) en el campo.
-    
-    **Funcionalidades:**
-    - Carga automática del video.
-    - Detección de personas (jugadores) en tiempo real.
-    - Visualización de los cuadros delimitadores alrededor de los jugadores.
-
-    **Autor:**
-    Javier Horacio Pérez Ricárdez
-""")
-
-# Mostrar título en la página principal
 st.title('Detección de Jugadores en Video')
-st.write("Se está procesando el video 'america_monterrey.mp4' para detectar los jugadores.")
+st.write("Sube un video de fútbol para detectar jugadores en él.")
 
-# Video path de ejemplo
-video_path = "america_monterrey.mp4"  # Aquí se carga el video directamente
+# Subir un archivo de video
+uploaded_video = st.file_uploader("Cargar video", type=["mp4", "mov", "avi"])
 
-# Mostrar el video con detecciones de jugadores
-stframe = st.empty()
+if uploaded_video is not None:
+    # Guardar el video temporalmente
+    video_path = "temp_video.mp4"
+    with open(video_path, "wb") as f:
+        f.write(uploaded_video.getbuffer())
 
-for frame in process_video(video_path):
-    stframe.image(frame, channels="RGB", use_container_width=True)
-    time.sleep(0.05)  # Controla la velocidad del video
+    # Mostrar el video con detecciones de jugadores
+    stframe = st.empty()
 
-st.write("¡Detección completa!")
+    for frame in process_video(video_path):
+        stframe.image(frame, channels="RGB", use_container_width=True)
+        time.sleep(0.05)  # Controla la velocidad del video
+
+    st.write("¡Detección completa!")
